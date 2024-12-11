@@ -6,8 +6,9 @@ authors = ["nikita.savin <nikita.a.savin@yandex.ru>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.9"
 fastapi = {extras = ["all"], version = "^0.115.6"}
+aiofiles = "^24.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

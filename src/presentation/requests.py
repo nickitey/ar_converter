@@ -1,9 +1,10 @@
+from typing import Optional
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
 
 class ARConverterRequest(BaseModel):
-    file: UploadFile | None
+    file: Optional[UploadFile]
 
     @staticmethod
     @field_validator("file")
