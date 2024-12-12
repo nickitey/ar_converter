@@ -17,14 +17,15 @@ class ARFileRepository(IARFileRepository):
         if extension.lower() == "fbx":
             try:
                 subprocess.run(["fbx2glb", "-b", sourcefile_name])
-                sourcefile_name = sourcefile_name.replace(extension, "glb")
+                
             except subprocess.CalledProcessError:
                 raise ARConverterException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Unable to convert {sourcefile_name} into a USDZ-file. File seems to be corrupted.",
                 )
+            os.remove(sourcefile_name)
+            sourcefile_name = sourcefile_name.replace(extension, "glb")
         try:
-
             subprocess.run(["usdzconvert", sourcefile_name, "resultfile.usdz"])
         except subprocess.CalledProcessError:
             raise ARConverterException(
