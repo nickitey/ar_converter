@@ -1,26 +1,40 @@
+import os
 import subprocess
-import aiofiles
-import io
 
+import aiofiles
+from fastapi import status
+
+from src.core.exceptions import ARConverterException
 from src.domain.repositories import IARFileRepository
 
 
 class ARFileRepository(IARFileRepository):
     async def convert(self, arfile):
-        content = await arfile.read()
-        name = arfile.filename
-        print(name)
+        content, extension = arfile.file, arfile.extension
+        sourcefile_name = content.filename.lower()
+        async with aiofiles.open(sourcefile_name, "wb") as tempfile:
+            await tempfile.write(await content.read())
+        if extension.lower() == "fbx":
+            try:
+                subprocess.run(["fbx2glb", "-b", sourcefile_name])
+                sourcefile_name = sourcefile_name.replace(extension, "glb")
+            except subprocess.CalledProcessError:
+                raise ARConverterException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Unable to convert {sourcefile_name} into a USDZ-file. File seems to be corrupted.",
+                )
         try:
-            async with aiofiles.open(name, 'wb') as tempfile:
-                await tempfile.write(content)
-            subprocess.run(
-                ["usdzconvert", name, "resultfile.usdz"]
-            )
+
+            subprocess.run(["usdzconvert", sourcefile_name, "resultfile.usdz"])
         except subprocess.CalledProcessError:
-            raise Exception(
-                f'Unable to convert {self._source_file_path} to {self._destination_file_path}',
+            raise ARConverterException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Unable to convert {sourcefile_name} into a USDZ-file. File seems to be corrupted.",
             )
         else:
-            with open("resultfile.usdz", "rb") as resultfile:
-                content = resultfile.read()
+            resultfile = "resultfile.usdz"
+            async with aiofiles.open(resultfile, "rb") as result:
+                content = await result.read()
+            os.remove(sourcefile_name)
+            os.remove(resultfile)
             return content
