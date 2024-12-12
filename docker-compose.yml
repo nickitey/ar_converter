@@ -1,0 +1,17 @@
+services:
+  converter:
+    build: 
+      context: converter
+
+  ar_converter:
+    build: .
+    container_name: ar_converter
+    depends_on:
+      converter:
+        condition: service_completed_successfully
+        required: true
+    command: ["python", "-m", "uvicorn", "src:app", "--host", "${UVICORN__HOST}", "--port", "${UVICORN__PORT}", "--workers", "${UVICORN__WORKERS}"]
+    ports:
+      - "${CONTAINER__EXTERNAL_PORT}:${UVICORN__PORT}"
+    volumes:
+      - ./src/:/usr/ar-converter/src/
