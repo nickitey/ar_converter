@@ -10,6 +10,7 @@ docker build -t ar-converter-image -f Dockerfile .
 echo "$(date +%H:%M:%S\ %d.%m.%Y): Сборка образа веб-сервера закончена"
 echo "$(date +%H:%M:%S\ %d.%m.%Y): Запускаю контейнер с сервером. Сервер слушает запросы, поступающие на порт $CONTAINER__EXTERNAL_PORT хоста"
 docker run --rm \
+	--name ar_converter \
     -v $PWD/src/:/usr/ar-converter/src/ \
     -p $CONTAINER__EXTERNAL_PORT:$UVICORN__PORT \
 	--env-file .env \
