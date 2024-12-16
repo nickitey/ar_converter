@@ -17,7 +17,7 @@ class ARFileRepository(IARFileRepository):
         if extension.lower() == "fbx":
             try:
                 subprocess.run(["fbx2glb", "-b", sourcefile_name])
-                
+
             except subprocess.CalledProcessError:
                 raise ARConverterException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
