@@ -1,9 +1,9 @@
 from io import BytesIO
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Request, UploadFile, status
+from fastapi import APIRouter, Depends, Header, UploadFile, status
 from fastapi.responses import StreamingResponse
 
-from src.core.exceptions import ARConverterException
 from src.dependencies.dependencies import Container
 from src.domain.entities import ARFile
 from src.domain.usecases import ConvertFileUseCase
@@ -14,13 +14,12 @@ router = APIRouter(prefix="/convertion", tags=["AR-Convertion"])
 
 @router.post("")
 async def make_convertion(
-    request: Request,
+    x_extension: Annotated[Optional[str], Header()],
     file: UploadFile,
     usecase: ConvertFileUseCase = Depends(Container),
 ) -> StreamingResponse:
     # Создание Pydantic-модели для валидации, что файл существует и у него подходящий заголовок
-    file_extension = request.headers.get("X-Extension")
-    uploaded_data = ARConverterRequest(extension=file_extension, file=file)
+    uploaded_data = ARConverterRequest(extension=x_extension, file=file)
 
     # Запускаем конвертер. За счет низкой связанности, логика конвертации
     # может быть абсолютно разной, это никак не повлияет на логику API.
