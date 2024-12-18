@@ -3,9 +3,10 @@ from fastapi import APIRouter, FastAPI
 from src.core.settings import Settings
 from src.presentation.routers import router
 
+settings = Settings()
+
 
 def _create_app(router: APIRouter):
-    settings = Settings()
     app = FastAPI(
         title="AR-Converter API",
         description="This service provides online API-converter from different kinds of AR-files to Apple-compartible USDZ-file",

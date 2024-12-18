@@ -1,8 +1,7 @@
-from io import BytesIO
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Header, UploadFile, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse
 
 from src.dependencies.dependencies import Container
 from src.domain.entities import ARFile
@@ -17,28 +16,26 @@ async def make_convertion(
     x_extension: Annotated[Optional[str], Header()],
     file: UploadFile,
     usecase: ConvertFileUseCase = Depends(Container),
-) -> StreamingResponse:
+) -> JSONResponse:
     # Создание Pydantic-модели для валидации, что файл существует и у него подходящий заголовок
     uploaded_data = ARConverterRequest(extension=x_extension, file=file)
 
+    ar_file_object = ARFile(
+        extension=uploaded_data.extension, file=uploaded_data.file
+    )
     # Запускаем конвертер. За счет низкой связанности, логика конвертации
     # может быть абсолютно разной, это никак не повлияет на логику API.
-    convertion: ARFile = await usecase.convert_file_usecase.invoke(
-        uploaded_data
+    convertion_status: bool = await usecase.convert_file_usecase.invoke(
+        ar_file_object
     )
-
-    # Соберем новое имя для результирующего файла.
-    old_filename = file.filename
-    extension = old_filename.rfind(".")
-    new_filename = old_filename[:extension] if extension > 0 else old_filename
-    filename_configuration = f'attachment; filename="{new_filename}.usdz"'
 
     # Подготовим ответ.
-    response: StreamingResponse = StreamingResponse(
-        BytesIO(convertion.content),
-        media_type="application/octet-stream",
-        status_code=status.HTTP_201_CREATED,
+    response: JSONResponse = JSONResponse(
+        {"status": "Успешно"} if convertion_status else {"status": "Неудачно"},
+        status_code=(
+            status.HTTP_201_CREATED
+            if convertion_status
+            else status.HTTP_204_NO_CONTENT
+        ),
     )
-    # Установим собранное имя файла результату.
-    response.headers["Content-Disposition"] = filename_configuration
     return response
