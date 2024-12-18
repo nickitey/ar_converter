@@ -12,6 +12,7 @@ echo "$(date +%H:%M:%S\ %d.%m.%Y): Запускаю контейнер с сер
 docker run --rm \
 	--name ar_converter \
     -v $PWD/src/:/usr/ar-converter/src/ \
+	-v $EXTERNAL_WORKDIR:$COMMON_APP__WORKDIR \
     -p $CONTAINER__EXTERNAL_PORT:$UVICORN__PORT \
 	--env-file .env \
 	ar-converter-image \

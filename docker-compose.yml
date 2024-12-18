@@ -15,5 +15,6 @@ services:
       - "${CONTAINER__EXTERNAL_PORT}:${UVICORN__PORT}"
     volumes:
       - ./src/:/usr/ar-converter/src/
+      - ${EXTERNAL_WORKDIR}:${COMMON_APP__WORKDIR}
     env_file:
       - .env
