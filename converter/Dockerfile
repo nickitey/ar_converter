@@ -1,20 +1,21 @@
 FROM plattar/python-usd:version-22.05b-slim-bullseye
 
+ENV HOME="/usr/src/app"
 ENV USD_SCHEMA_FOLDER="usd_schemas"
 ENV USDZCONVERT_FOLDER="usdzconvert"
 
-WORKDIR /usr/src/app
+WORKDIR ${HOME}
 
 # Update the environment path for USDZ Convert Tools
-ENV USDZCONVERT_BIN_PATH="/usr/src/app/xrutils/${USDZCONVERT_FOLDER}"
+ENV USDZCONVERT_BIN_PATH="${HOME}/xrutils/${USDZCONVERT_FOLDER}"
 ENV PATH="${PATH}:${USDZCONVERT_BIN_PATH}"
 
 # copy source folders into container
-COPY /${USD_SCHEMA_FOLDER} /usr/src/app/${USD_SCHEMA_FOLDER}
+COPY /${USD_SCHEMA_FOLDER} ${HOME}/${USD_SCHEMA_FOLDER}
 COPY /${USDZCONVERT_FOLDER} ${USDZCONVERT_BIN_PATH}
-COPY FBX2glTF-linux-x64 .
+COPY FBX2glTF-linux-x64 build_usd.py ${HOME}
 
-RUN ln -s /usr/src/app/FBX2glTF-linux-x64 ${USDZCONVERT_BIN_PATH}/fbx2glb && \
+RUN ln -s ${HOME}/FBX2glTF-linux-x64 ${USDZCONVERT_BIN_PATH}/fbx2glb && \
 	apt-get update && apt-get install -y --no-install-recommends \
 	git \
 	build-essential \
@@ -28,13 +29,15 @@ RUN ln -s /usr/src/app/FBX2glTF-linux-x64 ${USDZCONVERT_BIN_PATH}/fbx2glb && \
 	# Clone the USD Repository
 	git clone --branch "v${USD_VERSION}" --depth 1 https://github.com/PixarAnimationStudios/USD.git usdsrc && \
 	# Copy the AR Schema Components into the examples folder
-	cp -a /usr/src/app/${USD_SCHEMA_FOLDER}/usdInteractive/ usdsrc/pxr/usd/ && \
+	cp -a ${HOME}/${USD_SCHEMA_FOLDER}/usdInteractive/ usdsrc/pxr/usd/ && \
 	# Use usdGenSchema to Generate all CPP source files that will be built
-	cd usdsrc/pxr/usd/usdInteractive && usdGenSchema schema.usda . && cd /usr/src/app && \
+	cd usdsrc/pxr/usd/usdInteractive && usdGenSchema schema.usda . && cd ${HOME} && \
 	# Add the directories into the CMakeLists.txt so everything gets built
 	echo "add_subdirectory(usdInteractive)" >> usdsrc/pxr/usd/CMakeLists.txt && \
 	# Remove the old USD installation
 	rm -rf ${USD_BUILD_PATH} && \
+	# Подмена скрипта на такой же, но с корректной ссылкой для загрузки Boost.
+	mv build_usd.py usdsrc/build_scripts/ && \
 	# build a new version with our new schemas
 	python3 usdsrc/build_scripts/build_usd.py --no-examples --no-tutorials --no-imaging --no-usdview --no-draco --no-docs --no-tests ${USD_BUILD_PATH} && \
 	# remove source code as we don't need it anymore
